@@ -24,7 +24,7 @@ export type Transaction = {
 
 
 // JSON Bin setup
-const BIN_ID = "67e96faa8a456b79667f78fc";
+const BIN_ID = "68614c738561e97a502e2292";
 const API_KEY = "$2a$10$yti1izYQ7PKY9IhwxrQiuuIk8TZDdxM6nzYFnduMOvJtKIdyRhBB.";
 const BASE_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 

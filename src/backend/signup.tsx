@@ -4,6 +4,9 @@ import * as yup from "yup";
 import { addUser } from "./api";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom"; // For navigation
+import SignaturePad from "signature_pad";
+import { useRef, useEffect } from "react";
+
 
 const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/dx90y9zdx/upload`;
 const UPLOAD_PRESET = "holtback"; // Replace with your Cloudinary preset
@@ -27,12 +30,49 @@ const schema = yup.object().shape({
   pin: yup.string().required("Four digits required").required(),
   password: yup.string().min(6, "Password must be at least 6 characters").required(),
   confirmPassword: yup.string().oneOf([yup.ref("password")], "Passwords must match"),
+signature: yup.string().required("Signature is required"),
+
+
 });
 
 const SignUp = () => {
   const [loading, setLoading] = useState(false);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const navigate = useNavigate(); // For navigation
+
+ const canvasRef = useRef<HTMLCanvasElement | null>(null);
+const signaturePadRef = useRef<SignaturePad | null>(null);
+const [signature, setSignature] = useState<string | null>(null);
+
+
+useEffect(() => {
+  if (canvasRef.current) {
+    signaturePadRef.current = new SignaturePad(canvasRef.current, {
+      penColor: "black",
+    });
+  }
+}, []);
+
+
+const saveSignature = () => {
+  if (!signaturePadRef.current) return;
+
+  if (signaturePadRef.current.isEmpty()) {
+    alert("Signature is required");
+    return;
+  }
+
+  const dataURL = signaturePadRef.current.toDataURL("image/png");
+  setSignature(dataURL);
+  setValue("signature", dataURL);
+};
+
+const clearSignature = () => {
+  signaturePadRef.current?.clear();
+  setSignature(null);
+};
+
+
 
   const {
     register,
@@ -201,6 +241,45 @@ const SignUp = () => {
   <label htmlFor="" className="font-semibold">Confirm Password *</label>
     <input {...register("confirmPassword")} type="password" placeholder="" className="input w-full   border py-3 border-[#ccc]" />
   </div>
+
+{/* Signature */}
+<div className="mt-6">
+  <label className="font-semibold block mb-2">Signature</label>
+
+  <canvas
+    ref={canvasRef}
+    width={450}
+    height={150}
+    className="border-2 border-gray-300 rounded-md w-full h-[150px]"
+  />
+
+  <div className="flex gap-4 mt-3">
+    <button
+      type="button"
+      onClick={saveSignature}
+      className="bg-green-600 text-white px-4 py-2 rounded"
+    >
+      Save Signature
+    </button>
+
+    <button
+      type="button"
+      onClick={clearSignature}
+      className="bg-red-600 text-white px-4 py-2 rounded"
+    >
+      Clear
+    </button>
+  </div>
+
+  {signature && (
+    <div className="mt-4">
+      <p className="text-sm font-medium">Preview:</p>
+      <img src={signature} alt="Signature Preview" className="border mt-2" />
+    </div>
+  )}
+</div>
+
+
 
   {/* Submit Button */}
   <button
