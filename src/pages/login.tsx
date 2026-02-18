@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import {  useNavigate } from "react-router-dom";
+import {  Link, useNavigate } from "react-router-dom";
 import {  FaEye, FaEyeSlash,  FaSadCry } from "react-icons/fa";
 import { getUsers } from "../backend/api"; // Import getUsers function from api.ts
 
@@ -207,9 +207,12 @@ const LoginForm: React.FC = () => {
 
 
             </form>
-<div className="m-auto flex justify-center">
+<div className="m-auto flex gap-3 justify-center">
             <a href="#" className="text-red-600 mt-5 text-sm hover:underline mb-8">Forgot ID/Password</a>
     
+    <Link className="text-red-600 mt-5 text-sm hover:underline mb-8" to={'/signup'}>
+    Create an account </Link>
+           
 
   </div>
 
