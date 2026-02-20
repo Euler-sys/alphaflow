@@ -28,9 +28,8 @@ const TransactionHistory = () => {
         setUserAmount(user.amount || 0);
         setUserName(user.firstName || "");
         setLastName(user.lastName || "");
-        console.log(userName)
-        console.log(userLastName)
-
+        console.log(userName);
+        console.log(userLastName);
 
         const history = await fetchHistoryForLoggedUser(user.email);
         setTransactions(history);
@@ -53,22 +52,21 @@ const TransactionHistory = () => {
   //   .reduce((sum, t) => sum + t.amount, 0);
 
   const formatAmount = (amount: string | number) => {
-  // Remove any non-numeric characters except period (.) or comma
-  let cleaned = String(amount).replace(/[^0-9.,-]/g, "");
+    // Remove any non-numeric characters except period (.) or comma
+    let cleaned = String(amount).replace(/[^0-9.,-]/g, "");
 
-  // Replace comma with dot if comma is used as decimal
-  // If you have amounts like "7,000.50" (US) -> "7000.50"
-  // If your backend uses "7.000,50" (EU style) -> handle commas
-  if (cleaned.indexOf(",") > -1 && cleaned.indexOf(".") === -1) {
-    cleaned = cleaned.replace(",", ".");
-  } else {
-    cleaned = cleaned.replace(/,/g, "");
-  }
+    // Replace comma with dot if comma is used as decimal
+    // If you have amounts like "7,000.50" (US) -> "7000.50"
+    // If your backend uses "7.000,50" (EU style) -> handle commas
+    if (cleaned.indexOf(",") > -1 && cleaned.indexOf(".") === -1) {
+      cleaned = cleaned.replace(",", ".");
+    } else {
+      cleaned = cleaned.replace(/,/g, "");
+    }
 
-  const num = parseFloat(cleaned);
-  return isNaN(num) ? 0 : num;
-};
-
+    const num = parseFloat(cleaned);
+    return isNaN(num) ? 0 : num;
+  };
 
   return (
     <>
@@ -80,7 +78,7 @@ const TransactionHistory = () => {
           <p className="text-2xl md:text-3xl font-bold mt-2">
             {new Intl.NumberFormat("en-US", {
               style: "currency",
-              currency: "USD",
+              currency: "eur",
             }).format(userAmount)}
           </p>
           <p className="text-sm text-gray-500">Available balance</p>
@@ -122,20 +120,20 @@ const TransactionHistory = () => {
                   <p className="text-sm font-medium text-gray-800">
                     {tx.description}
                   </p>
-                 <div className="flex justify-between items-center mt-1">
-  <span
-    className={`font-semibold ${
-      tx.type === "debit" ? "text-red-500" : "text-green-600"
-    }`}
-  >
-    ${formatAmount(tx.amount).toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}
-  </span>
-  <span className="text-xs text-gray-400">Successful</span>
-</div>
-
+                  <div className="flex justify-between items-center mt-1">
+                    <span
+                      className={`font-semibold ${
+                        tx.type === "debit" ? "text-red-500" : "text-green-600"
+                      }`}
+                    >
+                      €
+                      {formatAmount(tx.amount).toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </span>
+                    <span className="text-xs text-gray-400">Successful</span>
+                  </div>
                 </div>
               ))}
 
@@ -143,7 +141,7 @@ const TransactionHistory = () => {
                 <div className="text-center mt-4">
                   <button
                     onClick={() => setVisibleCount((prev) => prev + 10)}
-                    className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
                   >
                     Load More
                   </button>
@@ -153,75 +151,82 @@ const TransactionHistory = () => {
           )}
         </div>
 
-      {selectedTransaction && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center px-4 md:px-8">
-    <button
-      onClick={() => setSelectedTransaction(null)}
-      className="absolute top-2 right-4 text-gray-500 text-xl hover:text-black"
-    >
-      &times;
-    </button>
+        {selectedTransaction && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center px-4 md:px-8">
+            <button
+              onClick={() => setSelectedTransaction(null)}
+              className="absolute top-2 right-4 text-gray-500 text-xl hover:text-black"
+            >
+              &times;
+            </button>
 
-    <div className="w-full max-w-lg mx-auto bg-white p-4 rounded-xl border shadow-sm">
-      <h2 className="text-2xl font-semibold mb-3">Transfer Confirmed</h2>
+            <div className="w-full max-w-lg mx-auto bg-white p-4 rounded-xl border shadow-sm">
+              <h2 className="text-2xl font-semibold mb-3">
+                Transfer Confirmed
+              </h2>
 
-      <div className="border rounded-lg p-4 flex items-start gap-3 bg-[#f9fffa]">
-        <CheckCircle className="text-green-600" size={24} />
-        <p className="text-gray-700">
-          You sent{" "}
-          <span className="font-semibold">
-            {Number(selectedTransaction.amount).toLocaleString("en-US", {
-              style: "currency",
-              currency: "USD",
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
-          </span>{" "}
-          on <span className="font-semibold">{selectedTransaction.date}</span>
-        </p>
-      </div>
+              <div className="border rounded-lg p-4 flex items-start gap-3 bg-[#f9fffa]">
+                <CheckCircle className="text-green-600" size={24} />
+                <p className="text-gray-700">
+                  You sent{" "}
+                  <span className="font-semibold">
+                    {Number(selectedTransaction.amount).toLocaleString(
+                      "en-US",
+                      {
+                        style: "currency",
+                        currency: "eur",
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      },
+                    )}
+                  </span>{" "}
+                  on{" "}
+                  <span className="font-semibold">
+                    {selectedTransaction.date}
+                  </span>
+                </p>
+              </div>
 
-      <div className="mt-5 space-y-2 text-gray-700 text-sm">
-        <p>
-          <span className="font-semibold">Description:</span>{" "}
-          {selectedTransaction.description}
-        </p>
-        <p>
-          <span className="font-semibold">Type:</span>{" "}
-          {selectedTransaction.type}
-        </p>
-        <p>
-          <span className="font-semibold">Amount:</span>{" "}
-          {Number(selectedTransaction.amount).toLocaleString("en-US", {
-            style: "currency",
-            currency: "USD",
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}
-        </p>
-      </div>
+              <div className="mt-5 space-y-2 text-gray-700 text-sm">
+                <p>
+                  <span className="font-semibold">Description:</span>{" "}
+                  {selectedTransaction.description}
+                </p>
+                <p>
+                  <span className="font-semibold">Type:</span>{" "}
+                  {selectedTransaction.type}
+                </p>
+                <p>
+                  <span className="font-semibold">Amount:</span>{" "}
+                  {Number(selectedTransaction.amount).toLocaleString("en-US", {
+                    style: "currency",
+                    currency: "eur",
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </p>
+              </div>
 
-      <div className="mt-6 flex flex-col gap-3">
-        <Link to={"/history"}>
-          <button
-            className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold"
-            onClick={() => setSelectedTransaction(null)}
-          >
-            Activity
-          </button>
-        </Link>
+              <div className="mt-6 flex flex-col gap-3">
+                <Link to={"/history"}>
+                  <button
+                    className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold"
+                    onClick={() => setSelectedTransaction(null)}
+                  >
+                    Activity
+                  </button>
+                </Link>
 
-        <button
-          className="w-full border border-green-600 text-green-600 py-3 rounded-lg font-semibold"
-          onClick={() => setSelectedTransaction(null)}
-        >
-          New Transfer
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
+                <button
+                  className="w-full border border-green-600 text-green-600 py-3 rounded-lg font-semibold"
+                  onClick={() => setSelectedTransaction(null)}
+                >
+                  New Transfer
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* <StickyBottomNav /> */}
       </div>

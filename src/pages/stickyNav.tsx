@@ -1,7 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FaHome, FaBars, FaTimes, FaSignOutAlt, FaExchangeAlt } from "react-icons/fa";
-import person from '../assets/person_1.jpg';
+import {
+  FaHome,
+  FaBars,
+  FaTimes,
+  FaSignOutAlt,
+  FaExchangeAlt,
+} from "react-icons/fa";
+import person from "../assets/person_1.jpg";
 
 const BottomNav: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,14 +36,14 @@ const BottomNav: React.FC = () => {
       localStorage.clear();
       sessionStorage.clear();
       setIsLoading(false);
-      navigate('/');
+      navigate("/");
     }, 2000);
   };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="w-16 h-16 border-4 border-red-500 border-dotted rounded-full animate-spin"></div>
+        <div className="w-16 h-16 border-4 border-blue-500 border-dotted rounded-full animate-spin"></div>
         <p className="mt-4 text-xl font-semibold text-black">Processing...</p>
       </div>
     );
@@ -48,7 +54,7 @@ const BottomNav: React.FC = () => {
       {/* Top-left Hamburger Button */}
       {!isOpen && (
         <button
-          className="fixed top-4 left-4 z-50 bg-red-800 text-white p-3 rounded-full shadow-lg transition-transform duration-300 hover:scale-110"
+          className="fixed top-4 left-4 z-50 bg-blue-800 text-white p-3 rounded-full shadow-lg transition-transform duration-300 hover:scale-110"
           onClick={() => setIsOpen(true)}
         >
           <FaBars className="text-xl" />
@@ -63,7 +69,7 @@ const BottomNav: React.FC = () => {
       >
         {/* Close Button */}
         <button
-          className="absolute top-4 right-4 text-gray-600 hover:text-red-500"
+          className="absolute top-4 right-4 text-gray-600 hover:text-blue-500"
           onClick={() => setIsOpen(false)}
         >
           <FaTimes className="text-xl" />
@@ -83,14 +89,15 @@ const BottomNav: React.FC = () => {
               <img
                 src={userImage}
                 alt="Profile"
-                className="h-16 w-16 border-4 border-red-600 rounded-full"
+                className="h-16 w-16 border-4 border-blue-600 rounded-full"
               />
               <div className="text-center">
                 <h1 className="text-sm font-semibold">
-                  Hello <span className="uppercase">{userName.split(" ")[0]}!!</span>,
+                  Hello{" "}
+                  <span className="uppercase">{userName.split(" ")[0]}!!</span>,
                 </h1>
                 <span className="text-lg font-semibold">Welcome Back</span>
-                
+
                 <p className="text-[13px] font-semibold">
                   Account Number: {AcctNum}
                 </p>
@@ -104,42 +111,42 @@ const BottomNav: React.FC = () => {
             <nav className="px-6 py-4 space-y-4">
               <Link
                 to="/overview"
-                className="flex items-center space-x-2 text-gray-700 hover:text-red-500 transition"
+                className="flex items-center space-x-2 text-gray-700 hover:text-blue-500 transition"
               >
                 <span className="material-icons">dashboard</span>
                 <span>Investment</span>
               </Link>
               <Link
                 to="/history"
-                className="flex items-center space-x-2 text-gray-700 hover:text-red-500 transition"
+                className="flex items-center space-x-2 text-gray-700 hover:text-blue-500 transition"
               >
                 <span className="material-icons">history</span>
                 <span>History</span>
               </Link>
               <Link
                 to="/dashboard"
-                className="flex items-center space-x-2 text-gray-700 hover:text-red-500 transition"
+                className="flex items-center space-x-2 text-gray-700 hover:text-blue-500 transition"
               >
                 <FaHome className="text-base" />
                 <span>Dashboard</span>
               </Link>
               <Link
                 to="/zelle"
-                className="flex items-center space-x-2 text-gray-700 hover:text-red-500 transition"
+                className="flex items-center space-x-2 text-gray-700 hover:text-blue-500 transition"
               >
                 <FaExchangeAlt className="text-base" />
                 <span>Transfer | Zelle®</span>
               </Link>
               <Link
                 to="/cards"
-                className="flex items-center space-x-2 text-gray-700 hover:text-red-500 transition"
+                className="flex items-center space-x-2 text-gray-700 hover:text-blue-500 transition"
               >
                 <span className="material-icons">credit_card</span>
                 <span>My Cards</span>
               </Link>
               <Link
                 to="/settings"
-                className="flex items-center space-x-2 text-gray-700 hover:text-red-500 transition"
+                className="flex items-center space-x-2 text-gray-700 hover:text-blue-500 transition"
               >
                 <span className="material-icons">settings</span>
                 <span>Settings</span>
@@ -147,9 +154,8 @@ const BottomNav: React.FC = () => {
             </nav>
           </div>
 
-          
           <div
-            className="p-6 cursor-pointer flex items-center gap-3 text-lg text-red-600 hover:text-red-800 font-semibold"
+            className="p-6 cursor-pointer flex items-center gap-3 text-lg text-blue-600 hover:text-blue-800 font-semibold"
             onClick={handleLogout}
           >
             <FaSignOutAlt className="text-2xl" />

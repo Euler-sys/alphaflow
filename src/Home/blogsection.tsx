@@ -22,8 +22,8 @@ const articles = [
     image: img3,
   },
   {
-    title: "Sostieni la Ricerca Scientifica",
-    description: "Dona ora",
+    title: "Apex Financier Bank",
+    description: "Located in Italy — Dona ora",
     image: img4,
   },
   {

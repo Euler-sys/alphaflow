@@ -13,7 +13,7 @@ const PaymentSuccess = () => {
         </p>
         <button
           onClick={() => navigate("/")}
-          className="w-full bg-red-600 text-white py-3 rounded-lg text-lg font-medium hover:bg-red-700 transition mt-4"
+          className="w-full bg-blue-600 text-white py-3 rounded-lg text-lg font-medium hover:bg-blue-700 transition mt-4"
         >
           New Transfer
         </button>

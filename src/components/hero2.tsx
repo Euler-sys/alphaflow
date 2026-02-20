@@ -1,6 +1,5 @@
-
 import playstore from "../assets/google.png"; // Replace with actual path
-  // Replace with actual path
+// Replace with actual path
 
 const Hero2 = () => {
   return (
@@ -9,7 +8,7 @@ const Hero2 = () => {
       <div className="absolute top-8 right-8 w-6 h-6 bg-blue-200 rotate-45 rounded-md"></div>
 
       <div className="max-w-xl">
-        <h1 className="text-4xl md:text-5xl font-bold text-red-800 mb-4">
+        <h1 className="text-4xl md:text-5xl font-bold text-blue-800 mb-4">
           The simplest way to bank
         </h1>
         <p className="text-gray-600 text-base md:text-lg mb-6">
@@ -18,14 +17,11 @@ const Hero2 = () => {
         </p>
 
         <div className="flex justify-center gap-4">
-        
-            <img
-              src={playstore}
-              alt="Google Play"
-              className=" w-[150px] hover:scale-105 transition"
-            />
-        
-         
+          <img
+            src={playstore}
+            alt="Google Play"
+            className=" w-[150px] hover:scale-105 transition"
+          />
         </div>
       </div>
     </section>

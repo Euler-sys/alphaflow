@@ -13,30 +13,33 @@ const Header: React.FC = () => {
         {/* Left: Logo + FDC Image */}
         <div className="flex flex-col space-x-4">
           <Link to="/">
-            <img src={logo} alt="Logo" className=" w-[300px]" />
+            <img src={logo} alt="Logo" className=" w-[100px]" />
           </Link>
-         
         </div>
 
         {/* Middle: Navigation Links (Only 3 links) */}
         <nav className="hidden md:flex space-x-6">
-          {["Personal", "Loans", "Business" , "Wealth & Insurance" , "Services" ].map(
-            (item) => (
-              <Link
-                key={item}
-                to={`/`}
-                className="text-gray-700 hover:text-red-800 font-medium"
-              >
-                {item}
-              </Link>
-            )
-          )}
+          {[
+            "Personal",
+            "Loans",
+            "Business",
+            "Wealth & Insurance",
+            "Services",
+          ].map((item) => (
+            <Link
+              key={item}
+              to={`/`}
+              className="text-gray-700 hover:text-blue-800 font-medium"
+            >
+              {item}
+            </Link>
+          ))}
         </nav>
 
         {/* Right: Button & Hamburger Menu */}
         <div className="flex items-center gap-4">
           <Link to="/login">
-            <button className="border-4 text-[10px] border-red-800 px-4 py-2 rounded-full">
+            <button className="border-4 text-[10px] border-blue-800 px-4 py-2 rounded-full">
               LOG-IN
             </button>
           </Link>
@@ -47,8 +50,6 @@ const Header: React.FC = () => {
             {isOpen ? <FaTimes /> : <FaBars />}
           </button>
         </div>
-
-        
       </div>
 
       {/* <img src={fdc} alt="FDC Logo" width={300}  className="p-2"/> */}
@@ -57,18 +58,27 @@ const Header: React.FC = () => {
       {isOpen && (
         <div className="md:hidden absolute top-16 left-0 w-full bg-white shadow-md py-4">
           <nav className="flex flex-col items-center space-y-4">
-            {["Home", "Personal", "Business", "Loans & Mortgages", "Security Center", "Financial Literacy", "News", "About Us", "Contact Us", "Careers"].map(
-              (item) => (
-                <Link
-                  key={item}
-                  to={`/`}
-                  className="text-gray-700 hover:text-purple-600 font-medium"
-                  onClick={() => setIsOpen(false)}
-                >
-                  {item}
-                </Link>
-              )
-            )}
+            {[
+              "Home",
+              "Personal",
+              "Business",
+              "Loans & Mortgages",
+              "Security Center",
+              "Financial Literacy",
+              "News",
+              "About Us",
+              "Contact Us",
+              "Careers",
+            ].map((item) => (
+              <Link
+                key={item}
+                to={`/`}
+                className="text-gray-700 hover:text-purple-600 font-medium"
+                onClick={() => setIsOpen(false)}
+              >
+                {item}
+              </Link>
+            ))}
           </nav>
         </div>
       )}

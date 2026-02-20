@@ -4,7 +4,7 @@ import BottomNav2 from "./bottomnav2";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaCreditCard } from "react-icons/fa";
 import log from "../assets/logo.png";
-import { getUsers, updateUser } from "../backend/api"; // Ensure same API as Admin
+import { getUsers, updateUser } from "../backend/api";
 
 const SendMoney = () => {
   const [user, setUser] = useState<any>(null);
@@ -16,17 +16,19 @@ const SendMoney = () => {
     bank: "",
     accountNumber: "",
     routingNumber: "",
-    amount: "", // keep raw number as string
+    amount: "",
     purpose: "",
   });
 
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState(false);
+  const [stage, setStage] = useState<"form" | 1 | 2 | 3 | "success">("form");
+  const [code, setCode] = useState("");
+  const [accessDetails, setAccessDetails] = useState("");
+  const [error, setError] = useState("");
+  const [attempts, setAttempts] = useState(3);
 
   const navigate = useNavigate();
 
-  // Fetch users like Admin panel
   useEffect(() => {
     const fetchData = async () => {
       const data = await getUsers();
@@ -43,51 +45,84 @@ const SendMoney = () => {
     fetchData();
   }, []);
 
-  // Format input for display, store raw in state
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setReceiver({ ...receiver, [e.target.name]: e.target.value });
+  };
+
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value.replace(/[^0-9.]/g, ""); // allow digits & dot
+    const raw = e.target.value.replace(/[^0-9.]/g, "");
     setReceiver({ ...receiver, amount: raw });
   };
 
-  const formatDisplayAmount = (value: string) => {
-    if (!value) return "";
-    const num = Number(value);
-    if (isNaN(num)) return "";
-    return num.toLocaleString("en-US", { maximumFractionDigits: 2 });
-  };
+  // Hardcoded verification answers
+  const CORRECT_CODE = "123456";
+  const CORRECT_ACCESS = "ACCESS123";
+  const TAX_PERCENT = 0.1;
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.name === "amount") {
-      handleAmountChange(e);
-    } else {
-      setReceiver({ ...receiver, [e.target.name]: e.target.value });
+  const taxFee = user ? Number(user.amount) * TAX_PERCENT : 0;
+
+  // Progress through the 3-step verification
+  const handleNextStage = () => {
+    if (stage === 1) {
+      if (code !== CORRECT_CODE) {
+        const remaining = attempts - 1;
+        setAttempts(remaining);
+        if (remaining <= 0) {
+          alert("Account on hold due to 3 failed attempts.");
+          setStage("form");
+          setAttempts(3);
+          return;
+        }
+        setError(`Incorrect code. ${remaining} attempt(s) left.`);
+        return;
+      }
+      setError("");
+      setAttempts(3);
+      setStage(2);
+    } else if (stage === 2) {
+      if (accessDetails !== CORRECT_ACCESS) {
+        const remaining = attempts - 1;
+        setAttempts(remaining);
+        if (remaining <= 0) {
+          alert("Account on hold due to 3 failed attempts.");
+          setStage("form");
+          setAttempts(3);
+          return;
+        }
+        setError(`Incorrect access details. ${remaining} attempt(s) left.`);
+        return;
+      }
+      setError("");
+      setAttempts(3);
+      setStage(3);
+    } else if (stage === 3) {
+      setError("");
+      handleSubmit(); // Send money after tax confirmation
     }
   };
 
-  const formatAmountForHistory = (amount: number) => {
-    return `$${amount.toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const amountNum = Number(receiver.amount);
+    if (
+      !receiver.name ||
+      !receiver.bank ||
+      !receiver.accountNumber ||
+      !receiver.routingNumber ||
+      !receiver.amount ||
+      amountNum <= 0
+    ) {
+      alert("Please fill all fields correctly.");
+      return;
+    }
+    setStage(1); // start verification
+    setAttempts(3);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     if (!user) return;
 
     const transferAmount = Number(receiver.amount);
-    const count = Number(localStorage.getItem("transferCount") || 0);
-
-    if (count >= 3) {
-      setError(true);
-      return;
-    }
-
-    if (transferAmount <= 0) {
-      alert("Invalid transfer amount");
-      return;
-    }
-
     if (transferAmount > user.amount) {
       alert("Insufficient balance");
       return;
@@ -95,40 +130,36 @@ const SendMoney = () => {
 
     setLoading(true);
 
-    // 🔹 New history entry like Admin
     const newHistoryEntry = {
       date: new Date().toISOString().split("T")[0],
-      amount: transferAmount,
+      amount: transferAmount + taxFee,
       description: `Transfer to ${receiver.name}`,
       type: "debit",
-      formattedAmount: formatAmountForHistory(transferAmount),
+      formattedAmount: `€${(transferAmount + taxFee).toFixed(2)}`,
     };
 
     const updatedUser = {
       ...user,
-      amount: user.amount - transferAmount,
+      amount: user.amount - transferAmount - taxFee,
       history: [newHistoryEntry, ...(user.history || [])],
     };
 
     try {
-      // 🔹 Find index and update backend like Admin panel
       const index = users.findIndex((u) => u.email === user.email);
       if (index !== -1) {
         await updateUser(index, updatedUser);
 
-        // 🔹 Update local state & storage
         const updatedUsers = [...users];
         updatedUsers[index] = updatedUser;
         setUsers(updatedUsers);
         setUser(updatedUser);
         localStorage.setItem("loggedInUser", JSON.stringify(updatedUser));
-        localStorage.setItem("transferCount", String(count + 1));
       }
 
       setLoading(false);
-      setSuccess(true);
+      setStage("success");
     } catch (err) {
-      console.error("Error updating user:", err);
+      console.error(err);
       alert("Failed to send money. Please try again.");
       setLoading(false);
     }
@@ -155,101 +186,128 @@ const SendMoney = () => {
         <div className="bg-white rounded-xl p-6 shadow">
           <h2 className="text-gray-700 font-medium">Total Balance</h2>
           <h1 className="text-3xl font-bold mt-2">
-            ${user?.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            €{user?.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </h1>
         </div>
       </div>
 
-      {/* Transfer Form */}
       <div className="min-h-screen bg-gray-50 flex flex-col items-center px-4 py-6">
         <header className="w-full flex items-center justify-between py-4 border-b max-w-md">
           <button onClick={() => navigate(-1)} className="text-xl">
             <FaArrowLeft />
           </button>
-          <h1 className="text-lg font-semibold">New Transfer</h1>
+          <h1 className="text-lg font-semibold">
+            {stage === "form" ? "New Transfer" : "Verification"}
+          </h1>
           <div className="w-8" />
         </header>
 
-        <div className="w-full max-w-md bg-white shadow-md rounded-lg p-6 mt-6">
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <div className="bg-gray-100 p-3 rounded-lg flex items-center gap-2">
-              <FaCreditCard className="text-red-600" />
-              <div>
-                <p className="text-sm font-medium">Debit Card</p>
-                <p className="text-xs text-gray-500">**** **** **** 4900</p>
+        {/* Initial Form */}
+        {stage === "form" && (
+          <div className="w-full max-w-md bg-white shadow-md rounded-lg p-6 mt-6">
+            <form className="space-y-4" onSubmit={handleFormSubmit}>
+              <div className="bg-gray-100 p-3 rounded-lg flex items-center gap-2">
+                <FaCreditCard className="text-red-600" />
+                <div>
+                  <p className="text-sm font-medium">Debit Card</p>
+                  <p className="text-xs text-gray-500">**** **** **** 4900</p>
+                </div>
               </div>
-            </div>
 
-            {[
-              { name: "name", label: "Receiver Full Name" },
-              { name: "bank", label: "Bank Name" },
-              { name: "accountNumber", label: "Account Number" },
-              { name: "routingNumber", label: "Routing Number" },
-              { name: "amount", label: "Transfer Amount" },
-              { name: "purpose", label: "Purpose (Optional)" },
-            ].map((field) => (
-              <div key={field.name} className="bg-gray-100 p-3 rounded-lg">
-                <label className="text-sm text-gray-600">{field.label}</label>
+              {[
+                { name: "name", label: "Receiver Full Name" },
+                { name: "bank", label: "Bank Name" },
+                { name: "accountNumber", label: "Account Number" },
+                { name: "routingNumber", label: "Routing Number" },
+                { name: "amount", label: "Transfer Amount" },
+                { name: "purpose", label: "Purpose (Optional)" },
+              ].map((field) => (
+                <div key={field.name} className="bg-gray-100 p-3 rounded-lg">
+                  <label className="text-sm text-gray-600">{field.label}</label>
+                  <input
+                    type="text"
+                    name={field.name}
+                    value={(receiver as any)[field.name]}
+                    onChange={
+                      field.name === "amount"
+                        ? handleAmountChange
+                        : handleInputChange
+                    }
+                    className="w-full mt-1 px-4 py-2 border rounded-lg"
+                    required={field.name !== "purpose"}
+                  />
+                </div>
+              ))}
+
+              <button
+                type="submit"
+                className="w-full bg-red-800 text-white py-3 text-lg hover:bg-black transition"
+              >
+                Continue
+              </button>
+            </form>
+          </div>
+        )}
+
+        {/* Verification Steps */}
+        {stage !== "form" && stage !== "success" && (
+          <div className="w-full max-w-md bg-white shadow-md rounded-lg p-6 mt-6">
+            {stage === 1 && (
+              <>
+                <h2 className="text-lg font-medium mb-4">
+                  Enter 6-Digit code sent to your Email
+                </h2>
                 <input
                   type="text"
-                  name={field.name}
-                  value={
-                    field.name === "amount"
-                      ? formatDisplayAmount(receiver.amount)
-                      : (receiver as any)[field.name]
-                  }
-                  onChange={handleInputChange}
-                  className="w-full mt-1 px-4 py-2 border rounded-lg"
-                  required={field.name !== "purpose"}
+                  maxLength={6}
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg mb-2"
                 />
-              </div>
-            ))}
+              </>
+            )}
+
+            {stage === 2 && (
+              <>
+                <h2 className="text-lg font-medium mb-4">Access Details</h2>
+                <input
+                  type="text"
+                  value={accessDetails}
+                  onChange={(e) => setAccessDetails(e.target.value)}
+                  placeholder="Enter your access details"
+                  className="w-full px-4 py-2 border rounded-lg mb-2"
+                />
+              </>
+            )}
+
+            {stage === 3 && (
+              <>
+                <h2 className="text-lg font-medium mb-4">Tax / Fee</h2>
+                <p className="mb-2">
+                  A tax/fee of <strong>€{taxFee.toFixed(2)}</strong> (10% of
+                  your balance) must be paid to proceed.
+                </p>
+              </>
+            )}
+
+            {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
 
             <button
-              type="submit"
+              onClick={handleNextStage}
               className="w-full bg-red-800 text-white py-3 text-lg hover:bg-black transition"
             >
-              Send Money
-            </button>
-          </form>
-        </div>
-      </div>
-
-      {/* Loading */}
-      {loading && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <img src={log} alt="Loading" className="animate-pulse" />
-        </div>
-      )}
-
-      {/* Error */}
-      {error && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg text-center max-w-sm">
-            <h2 className="text-red-600 font-semibold">
-              Transfer Access Restricted
-            </h2>
-            <p className="text-sm mt-2">
-              Tier-2 Compliance Required. Please contact support.
-            </p>
-            <button
-              onClick={() => setError(false)}
-              className="mt-4 w-full bg-red-600 text-white py-2 rounded"
-            >
-              Close
+              {stage < 3 ? "Next" : "Pay Tax & Submit"}
             </button>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Success */}
-      {success && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-lg text-center max-w-sm">
-            <h2 className="text-green-600 font-semibold">
-              Transaction Successful
+        {/* Success */}
+        {stage === "success" && (
+          <div className="w-full max-w-md bg-white shadow-md rounded-lg p-6 mt-6 text-center">
+            <h2 className="text-green-600 font-semibold mb-2">
+              Transaction Complete
             </h2>
-            <p className="mt-2 text-sm">Your transfer has been completed.</p>
+            <p>Your transfer has been simulated successfully.</p>
             <button
               onClick={() => navigate("/dashboard")}
               className="mt-4 w-full bg-green-600 text-white py-2 rounded"
@@ -257,6 +315,12 @@ const SendMoney = () => {
               Done
             </button>
           </div>
+        )}
+      </div>
+
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <img src={log} alt="Loading" className="animate-pulse" />
         </div>
       )}
 
