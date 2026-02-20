@@ -14,6 +14,7 @@ const formatDate = (date: Date) => {
   return new Intl.DateTimeFormat("en-US", options).format(date);
 };
 
+
 const DepositsPage = () => {
   const currentDate = formatDate(new Date()); // Get today's date
   const [userAmount, setUserAmount] = useState<number>(0);

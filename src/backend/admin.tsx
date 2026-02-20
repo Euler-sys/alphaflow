@@ -82,7 +82,7 @@ const Admin = () => {
                     </button>
                     <button
                       onClick={() => handleDelete(index)}
-                      className="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600"
+                      className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-blue-600"
                     >
                       Delete
                     </button>
