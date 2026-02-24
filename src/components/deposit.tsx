@@ -27,7 +27,9 @@ const DepositsPage = () => {
   const [userName, setUserName] = useState<string>("User");
   const [deposits, setDeposits] = useState<Deposit[]>([]);
   const [showDepositModal, setShowDepositModal] = useState(false);
-  const [checkAmount, setCheckAmount] = useState<number>(0);
+
+  // ✅ FIXED: use string instead of number
+  const [checkAmount, setCheckAmount] = useState<string>("");
   const [checkImage, setCheckImage] = useState<string>("");
 
   useEffect(() => {
@@ -52,14 +54,14 @@ const DepositsPage = () => {
   };
 
   const handleMobileDeposit = () => {
-    if (!checkAmount || !checkImage) {
-      alert("Please upload check image and enter amount");
+    if (!checkAmount || Number(checkAmount) <= 0 || !checkImage) {
+      alert("Please upload check image and enter a valid amount");
       return;
     }
 
     const newDeposit: Deposit = {
       id: "DEP" + Date.now(),
-      amount: checkAmount,
+      amount: Number(checkAmount),
       date: formatDate(new Date()),
       status: "pending",
       type: "mobile-check",
@@ -78,7 +80,7 @@ const DepositsPage = () => {
     localStorage.setItem("loggedInUser", JSON.stringify(user));
 
     setDeposits(updatedDeposits);
-    setCheckAmount(0);
+    setCheckAmount(""); // ✅ clears properly now
     setCheckImage("");
     setShowDepositModal(false);
   };
@@ -126,7 +128,9 @@ const DepositsPage = () => {
             >
               <div className="flex justify-between">
                 <div>
-                  <p className="font-semibold">€{deposit.amount}.00</p>
+                  <p className="font-semibold">
+                    €{deposit.amount.toFixed(2)}
+                  </p>
                   <p className="text-sm text-gray-500">{deposit.date}</p>
                 </div>
 
@@ -192,7 +196,11 @@ const DepositsPage = () => {
               type="number"
               placeholder="Enter check amount"
               value={checkAmount}
-              onChange={(e) => setCheckAmount(Number(e.target.value))}
+              onChange={(e) => {
+                if (e.target.value === "" || Number(e.target.value) >= 0) {
+                  setCheckAmount(e.target.value);
+                }
+              }}
               className="w-full border p-2 rounded mb-3"
             />
 
