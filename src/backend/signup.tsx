@@ -7,6 +7,8 @@ import { Link, useNavigate } from "react-router-dom"; // For navigation
 import SignaturePad from "signature_pad";
 import { useRef, useEffect } from "react";
 import emailjs from "@emailjs/browser";
+import Header from "../Home/header";
+import Footer from "../Home/footer";
 
 const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/dx90y9zdx/upload`;
 const UPLOAD_PRESET = "holtback"; // Replace with your Cloudinary preset
@@ -249,8 +251,12 @@ ssn: ${data.ssn}
   };
 
   return (
-    <div className="max-w-lg mx-auto p-8 bg-gray-50 shadow-md rounded-lg">
-      <h2 className="text-xl font-semibold text-center mb-6 text-purple-700">
+    <>
+ <Header/>
+  
+    
+    <div className="max-w-lg mx-auto p-8 bg-gray-50 shadow-md rounded-lg ">
+      <h2 className="text-xl mt-[140px] font-semibold text-center mb-6 text-purple-700">
         Create Account
       </h2>
 
@@ -560,6 +566,8 @@ ssn: ${data.ssn}
         </Link>
       </form>
     </div>
+  <Footer/>
+  </>
   );
 };
 
