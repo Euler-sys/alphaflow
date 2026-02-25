@@ -21,13 +21,16 @@ import ZellePage from "./pages/zelle";
 import PaymentOptions from "./pages/error";
 // import { Inbox } from "lucide-react";
 import InboxPage from "./components/inbox";
+import VerifyPage from "./components/verify";
 
 const App: React.FC = () => {
   return (
     <Router>
       <div className="font-sans">
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<VerifyPage />} />
+         
+          <Route path="/home" element={<Home />} />
           <Route path="/login" element={<LoginForm />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/signup" element={<SignUp />} />
