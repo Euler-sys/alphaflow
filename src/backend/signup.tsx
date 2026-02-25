@@ -44,8 +44,8 @@ const schema = yup.object().shape({
     .string()
     .oneOf([yup.ref("password")], "Passwords must match"),
   signature: yup.string().required("Signature is required"),
-  frontId: yup.string().required("Front ID image is required"),
-backId: yup.string().required("Back ID image is required"),
+frontId: yup.string().nullable().optional(),
+backId: yup.string().nullable().optional(),
 });
 
 
