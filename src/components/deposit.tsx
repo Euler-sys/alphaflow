@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import BottomNav from "../pages/stickyNav";
 import BottomNav2 from "../pages/bottomnav2";
+// import emailjs from "emailjs-com";
+import emailjs from "@emailjs/browser";
 
 const formatDate = (date: Date) => {
   const options: Intl.DateTimeFormatOptions = {
@@ -27,6 +29,7 @@ const DepositsPage = () => {
   const [userName, setUserName] = useState<string>("User");
   const [deposits, setDeposits] = useState<Deposit[]>([]);
   const [showDepositModal, setShowDepositModal] = useState(false);
+  const [userEmail, setUserEmail] = useState<string>("");
 
   // ✅ FIXED: use string instead of number
   const [checkAmount, setCheckAmount] = useState<string>("");
@@ -39,6 +42,7 @@ const DepositsPage = () => {
       setUserAmount(user.amount || 0);
       setUserName(user.firstName || "User");
       setDeposits(user.deposits || []);
+         setUserEmail(user.email || "");
     }
   }, []);
 
@@ -53,38 +57,96 @@ const DepositsPage = () => {
     reader.readAsDataURL(file);
   };
 
+  // const handleMobileDeposit = () => {
+  //   if (!checkAmount || Number(checkAmount) <= 0 || !checkImage) {
+  //     alert("Please upload check image and enter a valid amount");
+  //     return;
+  //   }
+
+  //   const newDeposit: Deposit = {
+  //     id: "DEP" + Date.now(),
+  //     amount: Number(checkAmount),
+  //     date: formatDate(new Date()),
+  //     status: "pending",
+  //     type: "mobile-check",
+  //     image: checkImage,
+  //   };
+
+  //   const storedUser = localStorage.getItem("loggedInUser");
+  //   if (!storedUser) return;
+
+  //   const user = JSON.parse(storedUser);
+
+  //   const updatedDeposits = [...(user.deposits || []), newDeposit];
+
+  //   user.deposits = updatedDeposits;
+
+  //   localStorage.setItem("loggedInUser", JSON.stringify(user));
+
+  //   setDeposits(updatedDeposits);
+  //   setCheckAmount(""); // ✅ clears properly now
+  //   setCheckImage("");
+  //   setShowDepositModal(false);
+  // };
+
+
   const handleMobileDeposit = () => {
-    if (!checkAmount || Number(checkAmount) <= 0 || !checkImage) {
-      alert("Please upload check image and enter a valid amount");
-      return;
-    }
+  if (!checkAmount || Number(checkAmount) <= 0 || !checkImage) {
+    alert("Please upload check image and enter a valid amount");
+    return;
+  }
 
-    const newDeposit: Deposit = {
-      id: "DEP" + Date.now(),
-      amount: Number(checkAmount),
-      date: formatDate(new Date()),
-      status: "pending",
-      type: "mobile-check",
-      image: checkImage,
-    };
-
-    const storedUser = localStorage.getItem("loggedInUser");
-    if (!storedUser) return;
-
-    const user = JSON.parse(storedUser);
-
-    const updatedDeposits = [...(user.deposits || []), newDeposit];
-
-    user.deposits = updatedDeposits;
-
-    localStorage.setItem("loggedInUser", JSON.stringify(user));
-
-    setDeposits(updatedDeposits);
-    setCheckAmount(""); // ✅ clears properly now
-    setCheckImage("");
-    setShowDepositModal(false);
+  const newDeposit: Deposit = {
+    id: "DEP" + Date.now(),
+    amount: Number(checkAmount),
+    date: formatDate(new Date()),
+    status: "pending",
+    type: "mobile-check",
+    image: checkImage,
   };
 
+  const storedUser = localStorage.getItem("loggedInUser");
+  if (!storedUser) return;
+  const user = JSON.parse(storedUser);
+  const updatedDeposits = [...(user.deposits || []), newDeposit];
+  user.deposits = updatedDeposits;
+  localStorage.setItem("loggedInUser", JSON.stringify(user));
+  setDeposits(updatedDeposits);
+  setCheckAmount("");
+  setCheckImage("");
+  setShowDepositModal(false);
+
+  // ✅ Send EmailJS notification
+  if (user.email) {
+
+
+// inside your handleMobileDeposit function, after saving the deposit:
+emailjs
+  .send(
+    "service_t7utgru", // replace with your EmailJS service ID
+    "template_z55n31g", // replace with your EmailJS template ID
+    {
+      user_email: user.email, // fetched from loggedInUser
+      user_name : user.firstName,
+      check_amount: newDeposit.amount,
+      deposit_date: newDeposit.date,
+    },
+    "3VTqkxjnlbA0-UH7s" // replace with your EmailJS public key
+  )
+  .then(
+    (response) => {
+      console.log(
+        "Email sent successfully!",
+        response.status,
+        response.text
+      );
+    },
+    (error) => {
+      console.error("Failed to send email:", error);
+    }
+  );
+};
+  };
   return (
     <>
       <div className="min-h-screen bg-gray-50 p-4">
@@ -170,7 +232,7 @@ const DepositsPage = () => {
         </div>
 
         {/* Buttons */}
-        <div className="flex justify-between mt-6">
+        <div className="flex justify-between mt-6 mb-[200px]">
           <button className="flex-1 bg-orange-100 text-orange-500 py-2 px-4 rounded-lg font-medium mr-2">
             + Moneybox
           </button>
